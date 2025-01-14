@@ -1,4 +1,4 @@
-﻿___INFO___
+___INFO___
 
 {
   "type": "MACRO",
@@ -166,70 +166,86 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Import the logToConsole API
 const log = require('logToConsole');
 
-// Log the data object to the console
-// log('data =', data);
-
-// Main function to get the conversion label
 function getConversionLabel(data) {
     // Check if data is defined
     if (!data) {
         log('No data provided');
-        return null;
+        return '';
     }
 
-    // Access properties
-    const pickvariable = data.pickvariable || null; // Use pickvariable for matching
-    const pickevent = data.pickevent || null;
-    let picklookuptable = data.picklookuptable;
+    // Access properties with defaults
+    const pickvariable = data.pickvariable || '';
+    const pickevent = data.pickevent || '';
+    const picklookuptable = data.picklookuptable;
     const conversions = data.conversions || [];
-    const urltable = data.urltable || []; // Default to an empty array if undefined
-  
-    log('pickvariable', pickvariable);
-    log('pickevent', pickevent);
-    log('picklookuptable', picklookuptable); // Log new field
-    log('conversions', conversions);
-    log('urltable', urltable);
-  
-    // Determine shortname using picklookuptable or urltable
-    let shortname = picklookuptable || null;
+    const urltable = data.urltable || [];
 
-  if (!shortname) {
-        urltable.map(url => {
-            log('url.storeUrls', url.storeUrls);
-            if (url.storeUrls === pickvariable) {
-                shortname = url.shortnameforstore; // Get the corresponding short name
-                log('Matched shortname from urltable:', shortname);
+    // Debug logging
+    log('Input values:');
+    log('- pickvariable:', pickvariable);
+    log('- pickevent:', pickevent);
+    log('- picklookuptable:', picklookuptable);
+    log('- conversions length:', conversions.length);
+    log('- urltable length:', urltable.length);
+
+    // Determine shortname using picklookuptable or urltable
+    let shortname = picklookuptable || '';
+    
+    if (!shortname && urltable.length > 0) {
+        // Loop through URL table to find match
+        for (let i = 0; i < urltable.length; i++) {
+            log('Checking urltable entry:', urltable[i]);
+            if (urltable[i].storeUrls === pickvariable) {
+                shortname = urltable[i].shortnameforstore;
+                log('Found matching shortname in urltable:', shortname);
+                break;
             }
-        });
+        }
     }
 
     if (!shortname) {
-        log('No matching shortname found for pickvariable:', pickvariable);
-        return ''; // No matching shortname found
+        log('No matching shortname found');
+        return '';
     }
 
-    // Find the conversion label based on the shortname and pickevent
-    let conversionLabel = null;
-    conversions.map(conversion => {
-        log('conversion.shortname', conversion.shortname);
-        if (conversion.shortname === shortname && conversion.conversionevent === pickevent) {
-            conversionLabel = conversion.conversionlabel; // Return the conversion label
-            log('Matched conversion label:', conversionLabel);
-        }
-    });
+    log('Using shortname:', shortname);
+    log('Looking for event:', pickevent);
 
-    return conversionLabel || ''; // Return the conversion label or null if not found
+    // Find the conversion label
+    let conversionLabel = '';
+    if (conversions.length > 0) {
+        for (let i = 0; i < conversions.length; i++) {
+            log('Checking conversion:', {
+                shortname: conversions[i].shortname,
+                event: conversions[i].conversionevent,
+                matches: {
+                    shortname: conversions[i].shortname === shortname,
+                    event: conversions[i].conversionevent === pickevent
+                }
+            });
+            
+            if (conversions[i].shortname === shortname && 
+                conversions[i].conversionevent === pickevent) {
+                conversionLabel = conversions[i].conversionlabel;
+                log('Found matching conversion label:', conversionLabel);
+                break;
+            }
+        }
+    }
+
+    if (!conversionLabel) {
+        log('No matching conversion found for shortname and event');
+    }
+
+    return conversionLabel;
 }
+
 // Call the function and return the result
 const result = getConversionLabel(data);
-
-log('result', result);
-
-// Variables must return a value.
-return result || ''; // Return the conversion label or false if not found
+log('Final result:', result);
+return result;
 
 
 ___WEB_PERMISSIONS___
